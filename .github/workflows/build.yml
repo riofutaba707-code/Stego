@@ -1,33 +1,48 @@
-name: Build Windows 7 EXE
-
+name: Build 32-bit EXE for Windows 7 (cross)
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # позволяет запускать сборку вручную
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest # образ Windows, совместимый с Win7
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'   # версия, которая дружит с Windows 7
-      
-      - name: Install dependencies
+
+      - name: Install system dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller==4.10   # версия PyInstaller, стабильная на Win7
-          pip install -r requirements.txt
-          
-      - name: Build EXE
-        run: pyinstaller --onefile --windowed VKR.py
-        # замените "ваш_скрипт.py" на имя вашего файла
-        
-      - name: Upload artifact
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            wine wine32 wine64 \
+            python3 python3-pip python3-venv \
+            mingw-w64 \
+            xvfb
+
+      - name: Set up Python environment
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install pyinstaller==4.10
+          pip install pillow stegano cryptography
+
+      - name: Build Windows 32-bit EXE
+        run: |
+          source venv/bin/activate
+          # Указываем PyInstaller использовать 32-разрядный Python и упаковываем
+          pyinstaller \
+            --onefile \
+            --windowed \
+            --target-architecture=32bit \
+            --hidden-import=tkinter \
+            --hidden-import=_tkinter \
+            --hidden-import=PIL._tkinter_finder \
+            VKR.py
+
+      - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
-          name: stego-windows7-exe
+          name: stego-32bit
           path: dist/
