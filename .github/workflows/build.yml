@@ -23,7 +23,7 @@ jobs:
           pip install -r requirements.txt
           
       - name: Build EXE
-        run: pyinstaller --onefile --windowed VKR.py
+        run: pyinstaller --onefile --windowed VKR(1).py
         # замените "ваш_скрипт.py" на имя вашего файла
         
       - name: Upload artifact
